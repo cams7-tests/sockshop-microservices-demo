@@ -1,11 +1,19 @@
-version: '2'
-
+version: "3.8"
 services:
   elasticsearch:
-    image: elasticsearch
-    hostname: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.4
+    container_name: es1
+#    hostname: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - node.name=es1
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#    ports:
+#      - 9200:9200
   kibana:
-    image: kibana
+    image: kibana:7.17.4
+#    container_name: sockshop-logging-kibana
     hostname: kibana
     depends_on:
       - elasticsearch
@@ -13,6 +21,7 @@ services:
       - '5601:5601'
   log-server:
     image: weaveworksdemos/log-server
+#    container_name: sockshop-logging-log-server
     hostname: log-server
     depends_on:
       - elasticsearch

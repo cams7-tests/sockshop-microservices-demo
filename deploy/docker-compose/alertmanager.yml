@@ -1,11 +1,11 @@
 global:
   # The default SMTP smarthost used for sending emails.
-  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_smarthost: '192.168.100.14:2525'
   # SMTP authentication information.
   smtp_auth_username: ''
   smtp_auth_password: ''
   # The default SMTP From header field.
-  smtp_from: 'alertmanager@example.org'
+  smtp_from: 'from@alertmanager.test'
 
 route:
   group_by: ['cluster']
@@ -21,8 +21,10 @@ receivers:
 - name: 'email-all'
   email_configs:
     # The email address to send notifications to.
-  - to: 'alertmanager@example.org'
+  - to: 'to@alertmanager.test'
     # Whether or not to notify about resolved alerts.
     send_resolved: true
+    require_tls: false
     # The HTML body of the email notification.
     html: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}'
+    headers: { Subject: "[Alert] Prometheus Alert Email" }
