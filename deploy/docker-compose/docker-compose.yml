@@ -22,29 +22,17 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /home/cmagalhaes/My/Desenv/DevOps/microservices-demo/edge-router/traefik.toml:/etc/traefik/traefik.toml:ro
-      - /home/cmagalhaes/My/Desenv/Certificados/22-05-23/dev.cams7-job.ml/fullchain3.pem:/root/dev.cams7-job.ml.cert:ro
-      - /home/cmagalhaes/My/Desenv/Certificados/22-05-23/dev.cams7-job.ml/privkey3.pem:/root/dev.cams7-job.ml.key:ro
+      - /home/cmagalhaes/My/Desenv/Certificados/22-08-21/dev.cams7-job.ml/fullchain4.pem:/root/dev.cams7-job.ml.cert:ro
+      - /home/cmagalhaes/My/Desenv/Certificados/22-08-21/dev.cams7-job.ml/privkey4.pem:/root/dev.cams7-job.ml.key:ro
       - /home/cmagalhaes/My/Desenv/Certificados/22-06-20/traefik.cams7-job.ml/fullchain1.pem:/root/traefik.cams7-job.ml.cert:ro
       - /home/cmagalhaes/My/Desenv/Certificados/22-06-20/traefik.cams7-job.ml/privkey1.pem:/root/traefik.cams7-job.ml.key:ro
       - /home/cmagalhaes/My/Desenv/Certificados/22-06-24/rabbitmq.cams7-job.ml/fullchain1.pem:/root/rabbitmq.cams7-job.ml.cert:ro
       - /home/cmagalhaes/My/Desenv/Certificados/22-06-24/rabbitmq.cams7-job.ml/privkey1.pem:/root/rabbitmq.cams7-job.ml.key:ro
-      - /home/cmagalhaes/My/Desenv/Certificados/22-06-06/registry.cams7-job.ml/fullchain2.pem:/root/registry.cams7-job.ml.cert:ro
-      - /home/cmagalhaes/My/Desenv/Certificados/22-06-06/registry.cams7-job.ml/privkey2.pem:/root/registry.cams7-job.ml.key:ro
     labels:
       - traefik.frontend.rule=Host:traefik.cams7-job.ml
       - traefik.port=8080
-  registry:
-    image: registry:2.8.1
-    restart: always
-    networks:
-      - sockshop
-    volumes:
-      - sockshop-registry-data:/var/lib/registry
-    labels:
-      - traefik.frontend.rule=Host:registry.cams7-job.ml
-      - traefik.port=5000
   front-end:
-    image: registry.cams7-job.ml/front-end:0.3.12
+    image: cams7/sockshop-front-end:1.0.1
     restart: always
 #    cap_drop:
 #      - all
@@ -53,8 +41,10 @@ services:
     labels:
       - traefik.frontend.rule=Host:dev.cams7-job.ml
   catalogue:
-    image: registry.cams7-job.ml/catalogue:0.3.5
+    image: cams7/sockshop-catalogue:1.0.3
     restart: always
+    environment:
+      POSTGRES_CONNECTION_STRING: "host=catalogue-db port=5432 user=catalogue_user password=default_password dbname=socksdb sslmode=disable"
 #    cap_drop:
 #      - all
 #    cap_add:
@@ -63,19 +53,15 @@ services:
     networks:
       - sockshop
   catalogue-db:
-    image: registry.cams7-job.ml/catalogue-db:0.3.5
+    image: cams7/sockshop-catalogue-db:1.0.0
     restart: always
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_ALLOW_EMPTY_PASSWORD=true
-      - MYSQL_DATABASE=socksdb
     networks:
       - sockshop
     labels:
       - traefik.enable=false
   carts:
-    image: registry.cams7-job.ml/carts:0.4.8
-    restart: always
+    image: cams7/sockshop-carts:1.0.5
+    restart: always      
 #    cap_drop:
 #      - all
 #    cap_add:
@@ -85,6 +71,7 @@ services:
 #      - /tmp:rw,noexec,nosuid
     environment:
       - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false
+      - MONGODB_CONNECTION_STRING=mongodb://carts-db:27017
     networks:
       - sockshop
   carts-db:
@@ -104,7 +91,7 @@ services:
     labels:
       - traefik.enable=false
   orders:
-    image: registry.cams7-job.ml/orders:0.4.7
+    image: cams7/sockshop-orders:1.0.4
     restart: always
 #    cap_drop:
 #      - all
@@ -115,6 +102,9 @@ services:
 #      - /tmp:rw,noexec,nosuid
     environment:
       - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false
+      - MONGODB_CONNECTION_STRING=mongodb://orders-db:27017
+      - payment_url=http://payment
+      - shipping_url=http://shipping
     networks:
       - sockshop
   orders-db:
@@ -134,7 +124,7 @@ services:
     labels:
       - traefik.enable=false
   shipping:
-    image: registry.cams7-job.ml/shipping:0.4.8
+    image: cams7/sockshop-shipping:1.0.1
     restart: always
 #    cap_drop:
 #      - all
@@ -153,7 +143,7 @@ services:
     networks:
       - sockshop
   queue-master:
-    image: registry.cams7-job.ml/queue-master:0.3.1
+    image: cams7/sockshop-queue-master:1.0.1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: always
@@ -171,9 +161,6 @@ services:
       - rabbitmq_password=guest
       - shipping_queue=shipping-task
       - shipping_exchange=shipping-task-exchange
-      - docker_image_name=registry.cams7-job.ml/worker
-      - docker_image_version=latest
-      - docker_image_network=sockshop
     networks:
       - sockshop
   rabbitmq:
@@ -193,7 +180,7 @@ services:
       - traefik.frontend.rule=Host:rabbitmq.cams7-job.ml
       - traefik.port=15672
   payment:
-    image: registry.cams7-job.ml/payment:0.4.3
+    image: cams7/sockshop-payment:1.0.0
     restart: always
 #    cap_drop:
 #      - all
@@ -203,7 +190,7 @@ services:
     networks:
       - sockshop
   user:
-    image: registry.cams7-job.ml/user:0.4.4
+    image: cams7/sockshop-user:1.0.0
     restart: always
 #    cap_drop:
 #      - all
@@ -215,7 +202,7 @@ services:
     networks:
       - sockshop
   user-db:
-    image: registry.cams7-job.ml/user-db:0.4.4
+    image: cams7/sockshop-user-db:0.4.4
     restart: always
 #    cap_drop:
 #      - all
@@ -243,6 +230,3 @@ services:
 networks:
   sockshop:
     external: true
-
-volumes:
-  sockshop-registry-data:
