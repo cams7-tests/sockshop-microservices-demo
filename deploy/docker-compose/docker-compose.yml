@@ -203,7 +203,7 @@ services:
     networks:
       - sockshop
   payment:
-    image: cams7/sockshop-payment:1.0.0
+    image: cams7/sockshop-payment:1.0.1
     restart: always
 #    cap_drop:
 #      - all
