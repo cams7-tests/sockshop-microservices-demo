@@ -119,7 +119,7 @@ services:
     labels:
       - traefik.frontend.rule=Host:dev.cams7-job.ml
   catalogue:
-    image: cams7/sockshop-catalogue:1.0.3
+    image: cams7/sockshop-catalogue:1.0.4
     restart: always
     environment:
       POSTGRES_CONNECTION_STRING: "host=postgres port=5432 user=catalogue_user password=default_password dbname=socksdb sslmode=disable"
