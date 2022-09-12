@@ -213,7 +213,7 @@ services:
     networks:
       - sockshop
   user:
-    image: cams7/sockshop-user:1.0.1
+    image: cams7/sockshop-user:1.0.2
     restart: always
 #    cap_drop:
 #      - all
